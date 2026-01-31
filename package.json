@@ -3,10 +3,13 @@
     "version": "0.1.0",
     "private": true,
     "dependencies": {
+        "@popperjs/core": "^2.11.8",
+        "@testing-library/dom": "^9.3.4",
         "@testing-library/jest-dom": "^5.17.0",
         "@testing-library/react": "^13.4.0",
         "@testing-library/user-event": "^13.5.0",
         "@tippyjs/react": "^4.2.6",
+        "@types/react": "^18.3.3",
         "axios": "^1.7.3",
         "babel-plugin-module-resolver": "^5.0.2",
         "bootstrap": "^5.3.3",
@@ -23,6 +26,9 @@
         "react-toastify": "^10.0.5",
         "sass": "^1.77.8",
         "web-vitals": "^2.1.4"
+    },
+    "devDependencies": {
+        "typescript": "^5.5.4"
     },
     "scripts": {
         "start": "react-app-rewired start",
