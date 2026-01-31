@@ -1,8 +1,9 @@
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
 const constants = {
     apiRoutes: {
-        LOGIN_URL: "https://locketuploader-be-render.onrender.com/locket/login",
-        UPLOAD_MEDIA_URL:
-            "https://locketuploader-be-render.onrender.com/locket/upload-media",
+        LOGIN_URL: `${API_BASE_URL}/locket/login`,
+        UPLOAD_MEDIA_URL: `${API_BASE_URL}/locket/upload-media`,
     },
     toastSettings: {
         position: "bottom-right",

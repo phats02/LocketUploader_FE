@@ -104,13 +104,6 @@ const Upload = () => {
     };
 
     const showToastPleaseWait = () => {
-        toast.dismiss();
-        toast.info(
-            "I just migrated the server to Render at the free version, so the request may take a longer time. Please wait for it. ",
-            {
-                ...constants.toastSettings,
-            },
-        );
     };
 
     return (
