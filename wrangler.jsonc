@@ -1,0 +1,8 @@
+{
+    "$schema": "node_modules/wrangler/config-schema.json",
+    "name": "locket-widget",
+    "compatibility_date": "2026-01-31",
+    "assets": {
+        "directory": "./build"
+    }
+}
