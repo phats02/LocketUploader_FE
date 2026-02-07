@@ -12,6 +12,95 @@ import * as lockerService from "~/services/locketService";
 import Help from "../Modals/Login/Help";
 const cx = classNames.bind(styles);
 
+const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB in bytes
+
+/**
+ * Compress an image file to reduce its size below the maximum allowed size.
+ * Uses Canvas API to re-encode the image with reduced quality.
+ * @param {File} file - The original image file
+ * @returns {Promise<File>} - The compressed file (or original if compression not needed/possible)
+ */
+const compressImage = (file) => {
+    return new Promise((resolve) => {
+        // Only compress JPEG and PNG images
+        const validTypes = ["image/jpeg", "image/png"];
+        if (!validTypes.includes(file.type)) {
+            resolve(file);
+            return;
+        }
+
+        // If file is already under the limit, no compression needed
+        if (file.size <= MAX_FILE_SIZE) {
+            resolve(file);
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+
+                // Keep original dimensions
+                canvas.width = img.width;
+                canvas.height = img.height;
+
+                // Draw image onto canvas
+                ctx.drawImage(img, 0, 0);
+
+                // Start with high quality and reduce until file is small enough
+                let quality = 0.9;
+                const minQuality = 0.1;
+                const outputType = "image/jpeg"; // Convert to JPEG for better compression
+
+                const tryCompress = () => {
+                    canvas.toBlob(
+                        (blob) => {
+                            if (blob.size <= MAX_FILE_SIZE || quality <= minQuality) {
+                                // Create a new File from the blob
+                                const compressedFile = new File(
+                                    [blob],
+                                    file.name.replace(/\.(png|jpeg|jpg)$/i, ".jpg"),
+                                    { type: outputType }
+                                );
+
+                                const originalSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                                const compressedSizeMB = (compressedFile.size / (1024 * 1024)).toFixed(2);
+
+                                toast.info(
+                                    `Image compressed: ${originalSizeMB}MB → ${compressedSizeMB}MB`,
+                                    { ...constants.toastSettings }
+                                );
+
+                                resolve(compressedFile);
+                            } else {
+                                // Reduce quality and try again
+                                quality -= 0.1;
+                                tryCompress();
+                            }
+                        },
+                        outputType,
+                        quality
+                    );
+                };
+
+                tryCompress();
+            };
+            img.onerror = () => {
+                // If image loading fails, return original file
+                resolve(file);
+            };
+            img.src = event.target.result;
+        };
+        reader.onerror = () => {
+            // If reading fails, return original file
+            resolve(file);
+        };
+        reader.readAsDataURL(file);
+    });
+};
+
 const Upload = () => {
     const { user, setUser } = useContext(AuthContext);
 
@@ -20,6 +109,7 @@ const Upload = () => {
     const [previewUrl, setPreviewUrl] = useState("");
     const [isShowModal, setIsShowModal] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [isCompressing, setIsCompressing] = useState(false);
     const fileRef = useRef(null);
 
     useEffect(() => {
@@ -46,12 +136,24 @@ const Upload = () => {
         fileRef.current.click();
     };
 
-    const handleSelectFile = (e) => {
+    const handleSelectFile = async (e) => {
         const { files } = e.target;
         if (files?.length) {
-            const objectUrl = URL.createObjectURL(files[0]);
-            setFile(files[0]);
-            setPreviewUrl(objectUrl);
+            const selectedFile = files[0];
+
+            // Compress image if it's a PNG/JPEG over 1MB
+            if (selectedFile.type.includes("image")) {
+                setIsCompressing(true);
+                const processedFile = await compressImage(selectedFile);
+                setIsCompressing(false);
+                setFile(processedFile);
+                const objectUrl = URL.createObjectURL(processedFile);
+                setPreviewUrl(objectUrl);
+            } else {
+                setFile(selectedFile);
+                const objectUrl = URL.createObjectURL(selectedFile);
+                setPreviewUrl(objectUrl);
+            }
         }
     };
 
@@ -60,13 +162,25 @@ const Upload = () => {
         e.preventDefault();
     };
 
-    const handleSelectFileFromDrop = (e) => {
+    const handleSelectFileFromDrop = async (e) => {
         e.preventDefault();
         const { files } = e.dataTransfer;
         if (files?.length) {
-            const objectUrl = URL.createObjectURL(files[0]);
-            setFile(files[0]);
-            setPreviewUrl(objectUrl);
+            const selectedFile = files[0];
+
+            // Compress image if it's a PNG/JPEG over 1MB
+            if (selectedFile.type.includes("image")) {
+                setIsCompressing(true);
+                const processedFile = await compressImage(selectedFile);
+                setIsCompressing(false);
+                setFile(processedFile);
+                const objectUrl = URL.createObjectURL(processedFile);
+                setPreviewUrl(objectUrl);
+            } else {
+                setFile(selectedFile);
+                const objectUrl = URL.createObjectURL(selectedFile);
+                setPreviewUrl(objectUrl);
+            }
         }
     };
 
@@ -128,7 +242,16 @@ const Upload = () => {
                             role="button"
                             tabIndex="0"
                         >
-                            {previewUrl ? (
+                            {isCompressing ? (
+                                <div className={cx("content", "compressing")}>
+                                    <img
+                                        src={images.spinner}
+                                        alt="compressing"
+                                        className={cx("spinner")}
+                                    />
+                                    <h3>Compressing image...</h3>
+                                </div>
+                            ) : previewUrl ? (
                                 <div className={cx("preview-wrapper")}>
                                     {file.type.includes("image") ? (
                                         <img
