@@ -10,6 +10,7 @@ import LoginModal from "../Modals/Login/LoginModal";
 import * as miscFuncs from "~/helper/misc-functions";
 import * as lockerService from "~/services/locketService";
 import Help from "../Modals/Login/Help";
+import ImageCropper from "../ImageCropper";
 const cx = classNames.bind(styles);
 
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB in bytes
@@ -105,11 +106,13 @@ const Upload = () => {
     const { user, setUser } = useContext(AuthContext);
 
     const [file, setFile] = useState(null);
+    const [croppedFile, setCroppedFile] = useState(null);
     const [caption, setCaption] = useState("");
     const [previewUrl, setPreviewUrl] = useState("");
     const [isShowModal, setIsShowModal] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isCompressing, setIsCompressing] = useState(false);
+    const [originalPreviewUrl, setOriginalPreviewUrl] = useState("");
     const fileRef = useRef(null);
 
     useEffect(() => {
@@ -148,7 +151,8 @@ const Upload = () => {
                 setIsCompressing(false);
                 setFile(processedFile);
                 const objectUrl = URL.createObjectURL(processedFile);
-                setPreviewUrl(objectUrl);
+                setOriginalPreviewUrl(objectUrl);
+                setPreviewUrl(objectUrl); // Show inline cropper
             } else {
                 setFile(selectedFile);
                 const objectUrl = URL.createObjectURL(selectedFile);
@@ -175,7 +179,8 @@ const Upload = () => {
                 setIsCompressing(false);
                 setFile(processedFile);
                 const objectUrl = URL.createObjectURL(processedFile);
-                setPreviewUrl(objectUrl);
+                setOriginalPreviewUrl(objectUrl);
+                setPreviewUrl(objectUrl); // Show inline cropper
             } else {
                 setFile(selectedFile);
                 const objectUrl = URL.createObjectURL(selectedFile);
@@ -184,15 +189,31 @@ const Upload = () => {
         }
     };
 
+    // Handle crop update from inline cropper
+    const handleCropUpdate = (croppedFile) => {
+        setCroppedFile(croppedFile);
+    };
+
+    // Handle clearing the image
+    const handleClearImage = () => {
+        setPreviewUrl("");
+        setOriginalPreviewUrl("");
+        setCroppedFile(null);
+        setFile(null);
+    };
+
     const handleUploadFile = () => {
+        // Use cropped file for images if available, otherwise use original file
+        const uploadFile = (file && file.type.includes("image") && croppedFile) ? croppedFile : file;
         const fileType = file.type.includes("image") ? "image" : "video";
-        if (file) {
+
+        if (uploadFile) {
             setIsUploading(true);
             lockerService
-                .uploadMedia(file, caption, showToastPleaseWait)
+                .uploadMedia(uploadFile, caption, showToastPleaseWait)
                 .then((res) => {
                     if (res) {
-                        setPreviewUrl("");
+                        handleClearImage();
                         setCaption("");
                         setIsUploading(false);
 
@@ -253,11 +274,11 @@ const Upload = () => {
                                 </div>
                             ) : previewUrl ? (
                                 <div className={cx("preview-wrapper")}>
-                                    {file.type.includes("image") ? (
-                                        <img
-                                            src={previewUrl}
-                                            alt="preview"
-                                            className={cx("preview-image")}
+                                    {file && file.type.includes("image") ? (
+                                        <ImageCropper
+                                            imageSrc={originalPreviewUrl || previewUrl}
+                                            onCropComplete={handleCropUpdate}
+                                            frameSize={400}
                                         />
                                     ) : (
                                         <video
@@ -275,7 +296,7 @@ const Upload = () => {
                                     )}
                                     <button
                                         className={cx("btn-delete-preview")}
-                                        onClick={() => setPreviewUrl("")}
+                                        onClick={handleClearImage}
                                     >
                                         <span>&times;</span>
                                     </button>
@@ -310,12 +331,12 @@ const Upload = () => {
                         <div className={cx("actions")}>
                             <Help />
                             <div className={cx("buttons")}>
-                                <button onClick={() => setPreviewUrl("")}>
+                                <button onClick={handleClearImage}>
                                     Cancel
                                 </button>
                                 <button
                                     disabled={
-                                        previewUrl && caption && !isUploading
+                                        previewUrl && !isUploading
                                             ? ""
                                             : "disable"
                                     }

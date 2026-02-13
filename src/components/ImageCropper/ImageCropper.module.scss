@@ -1,0 +1,126 @@
+.cropper-inline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.hint {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #888;
+    text-align: center;
+}
+
+.frame-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    cursor: grab;
+    background: #1a1a1a;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+
+    &:active {
+        cursor: grabbing;
+    }
+}
+
+.image-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: center center;
+    margin-left: -50%;
+    margin-top: -50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.crop-image {
+    max-width: none;
+    user-select: none;
+    pointer-events: none;
+}
+
+.frame-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 4px solid var(--primary-color, #ff6b6b);
+    border-radius: 12px;
+    pointer-events: none;
+
+}
+
+.zoom-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 280px;
+}
+
+.zoom-icon {
+    font-size: 1.1rem;
+    color: #666;
+    font-weight: bold;
+    user-select: none;
+}
+
+.zoom-slider {
+    flex: 1;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #e0e0e0;
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+
+    &::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        background: var(--primary-color, #ff6b6b);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: transform 0.15s ease;
+
+        &:hover {
+            transform: scale(1.1);
+        }
+    }
+
+    &::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        background: var(--primary-color, #ff6b6b);
+        border-radius: 50%;
+        cursor: pointer;
+        border: none;
+    }
+}
+
+// Responsive
+@media screen and (max-width: 400px) {
+    .frame-container {
+        max-width: 250px;
+        max-height: 250px;
+    }
+
+    .zoom-slider {
+        max-width: 150px;
+    }
+
+    .hint {
+        font-size: 0.75rem;
+    }
+}
